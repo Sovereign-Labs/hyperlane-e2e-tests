@@ -1,6 +1,5 @@
 #![allow(unused_doc_comments)]
 //! This module implements `Runtime` trait and ensures that it uses correct `CHAIN_HASH`
-use sov_address::{EthereumAddress, FromVmAddress};
 use sov_eip712_auth::{SchemaProvider, Secp256k1CryptoSpec};
 use sov_hyperlane_integration::HyperlaneAddress;
 use sov_modules_api::capabilities::TransactionAuthenticator;
@@ -29,11 +28,11 @@ mod __generated {
 #[derive(Clone, Default)]
 pub struct Runtime<S: Spec>(pub(crate) RuntimeInner<S>)
 where
-    <S as Spec>::Address: HyperlaneAddress + FromVmAddress<EthereumAddress>;
+    <S as Spec>::Address: HyperlaneAddress;
 
 impl<S: Spec> SchemaProvider for Runtime<S>
 where
-    S::Address: HyperlaneAddress + FromVmAddress<EthereumAddress>,
+    S::Address: HyperlaneAddress,
 {
     const SCHEMA_BORSH: &'static [u8] = __generated::SCHEMA_BORSH;
 }
@@ -41,7 +40,7 @@ where
 impl<S: Spec> sov_modules_stf_blueprint::Runtime<S> for Runtime<S>
 where
     S::Da: DaSpec,
-    S::Address: HyperlaneAddress + FromVmAddress<EthereumAddress>,
+    S::Address: HyperlaneAddress,
     S::CryptoSpec: Secp256k1CryptoSpec,
 {
     // Make runtime authenticated.
@@ -96,7 +95,6 @@ where
         auth_data: <Self::Auth as TransactionAuthenticator<S>>::Decodable,
     ) -> Self::Decodable {
         match auth_data {
-            EvmAndEip712AuthenticatorInput::Evm(call) => Self::Decodable::Evm(call),
             EvmAndEip712AuthenticatorInput::Eip712(call) => call,
             EvmAndEip712AuthenticatorInput::Standard(call) => call,
         }

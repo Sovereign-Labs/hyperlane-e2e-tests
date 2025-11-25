@@ -5,7 +5,6 @@
 //!   2. Add the module to the `Runtime` below
 //!   3. Update `genesis.json` with any additional data required by your new module
 
-use sov_address::{EthereumAddress, FromVmAddress};
 use sov_hyperlane_integration::{
     warp::Warp, HyperlaneAddress, InterchainGasPaymaster, Mailbox as RawMailbox, MerkleTreeHook,
 };
@@ -50,7 +49,7 @@ pub type Mailbox<S> = RawMailbox<S, Warp<S>>;
 #[cfg_attr(feature = "native", derive(CliWallet), expose_rpc)]
 pub struct Runtime<S: Spec>
 where
-    S::Address: HyperlaneAddress + FromVmAddress<EthereumAddress>,
+    S::Address: HyperlaneAddress,
 {
     /// The `accounts` module is responsible for managing user accounts.
     pub accounts: sov_accounts::Accounts<S>,
@@ -87,7 +86,4 @@ where
     /// The StateConsistency module, used for acceptance testing
     #[cfg(feature = "acceptance-testing")]
     pub state_consistency: sov_test_state_consistency::StateConsistency<S>,
-    #[cfg_attr(feature = "native", cli_skip)]
-    /// The EVM module.
-    pub evm: sov_evm::Evm<S>,
 }

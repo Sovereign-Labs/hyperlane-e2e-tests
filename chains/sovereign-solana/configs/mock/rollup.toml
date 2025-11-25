@@ -27,7 +27,7 @@ kernel_commit_concurrency = 2
 # Run pruning once every 100_000 blocks. Prune any keys more than 100 versions old
 pruner_block_interval = 100_000
 pruner_versions_to_keep = 100
-state_cache_size = 10000000000 # 10GB
+state_cache_size = 10000000000  # 10GB
 
 # We define the rollup's genesis to occur at block number `start_height`. The rollup will ignore
 # any blocks before this height
@@ -57,16 +57,16 @@ telegraf_address = "127.0.0.1:8094"
 
 [proof_manager]
 aggregated_proof_block_jump = 1
-prover_address = "0xA6edfca3AA985Dd3CC728BFFB700933a986aC085"
+prover_address = "HjjEhif8MU9DtnXtZc5hkBu9XLAkAYe1qwzhDoxbcECv"
 max_number_of_transitions_in_db = 100
 max_number_of_transitions_in_memory = 20
 
 
 [sequencer]
-max_batch_size_bytes = 8388608 # 8 MiB
+max_batch_size_bytes = 8388608                                  # 8 MiB
 max_concurrent_blobs = 128
 max_allowed_node_distance_behind = 10
-rollup_address = "0xA6edfca3AA985Dd3CC728BFFB700933a986aC085"
+rollup_address = "HjjEhif8MU9DtnXtZc5hkBu9XLAkAYe1qwzhDoxbcECv"
 blob_processing_timeout_secs = 60
 
 [sequencer.preferred]
