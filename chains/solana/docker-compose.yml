@@ -1,0 +1,18 @@
+services:
+  validator:
+    build: .
+    volumes:
+      - ./data:/data
+      - ./environments:/opt/sealevel/environments
+    entrypoint: ["/opt/solana/entrypoint.sh"]
+    ports:
+      - "8899:8899"
+      - "8900:8900"
+  init:
+    build: .
+    entrypoint: ["/opt/solana/init.sh"]
+    volumes:
+      - ./environments:/opt/sealevel/environments
+    depends_on:
+      validator:
+        condition: service_started
