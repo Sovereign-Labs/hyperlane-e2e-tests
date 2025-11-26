@@ -1,0 +1,12 @@
+{
+  "sealevel": {
+    "sovereign": {
+      "oracleConfig": {
+        "tokenExchangeRate": "1",
+        "gasPrice": "1",
+        "tokenDecimals": 9
+      },
+      "overhead": 100000
+    }
+  }
+}

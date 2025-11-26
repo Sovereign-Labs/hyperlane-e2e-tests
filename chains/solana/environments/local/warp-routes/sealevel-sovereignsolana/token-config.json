@@ -1,0 +1,15 @@
+{
+  "sealevel": {
+    "type": "native",
+    "decimals": 9
+  },
+  "sovereign": {
+    "type": "synthetic",
+    "decimals": 9,
+    "name": "Solana",
+    "symbol": "SOL",
+    "token": "token_17k9phqd7fxsf50zljwg6ssa6cyvmjxua649yduaavyuctcecgcys2kkkn8",
+    "foreignDeployment": "0xdea7428f83523ea95c69f33ed7805976f5e75d07c7c095496f184ba02a5361c3"
+  }
+}
+
