@@ -15,32 +15,69 @@ const deployerAddress = "7bWFTGcxY59KfAc5p7SaBaPieQkcSBXs7xCyRoL7vPtf";
 const signer = new Ed25519Signer(privKey);
 const rollup = await createStandardRollup<any>();
 
-const maxU128 = "340282366920938463463374607431768211455";
-const call = {
-  warp: {
-    register: {
-      // The deployer can modify the warp route
-      admin: { InsecureOwner: deployerAddress },
-      ism: {
-        MessageIdMultisig: {
-          threshold: 1,
-          validators: ["0x70997970C51812dc3A010C7d01b50e0d17dc79C8"],
+const createWarpRoute = async () => {
+  const maxU128 = "340282366920938463463374607431768211455";
+  const call = {
+    warp: {
+      register: {
+        // The deployer can modify the warp route
+        admin: { InsecureOwner: deployerAddress },
+        ism: {
+          MessageIdMultisig: {
+            threshold: 1,
+            validators: ["0x70997970C51812dc3A010C7d01b50e0d17dc79C8"],
+          },
         },
-      },
-      token_source: {
-        Synthetic: {
-          remote_token_id: SOLANA_WARP_ROUTE_ID,
-          local_decimals: 9,
-          remote_decimals: 9,
+        token_source: {
+          Synthetic: {
+            remote_token_id: SOLANA_WARP_ROUTE_ID,
+            local_decimals: 9,
+            remote_decimals: 9,
+          },
         },
+        remote_routers: [[SOLANA_DOMAIN_ID, SOLANA_WARP_ROUTE_ID]],
+        inbound_transferrable_tokens_limit: maxU128,
+        inbound_limit_replenishment_per_slot: maxU128,
+        outbound_transferrable_tokens_limit: maxU128,
+        outbound_limit_replenishment_per_slot: maxU128,
       },
-      remote_routers: [[SOLANA_DOMAIN_ID, SOLANA_WARP_ROUTE_ID]],
-      inbound_transferrable_tokens_limit: maxU128,
-      inbound_limit_replenishment_per_slot: maxU128,
-      outbound_transferrable_tokens_limit: maxU128,
-      outbound_limit_replenishment_per_slot: maxU128,
     },
-  },
+  };
+  const { response } = await rollup.call(call, { signer });
+  console.log("Warp route created:", response);
 };
-const { response } = await rollup.call(call, { signer });
-console.log(JSON.stringify(response.events, null, 2));
+
+const configureIgp = async () => {
+  const call = {
+    interchain_gas_paymaster: {
+      set_relayer_config: {
+        beneficiary: deployerAddress,
+        default_gas: 2000,
+        domain_default_gas: [
+          {
+            default_gas: 3000,
+            domain: SOLANA_DOMAIN_ID,
+          },
+        ],
+        domain_oracle_data: [
+          {
+            data_value: {
+              gas_price: 1,
+              token_exchange_rate: 1,
+            },
+            domain: SOLANA_DOMAIN_ID,
+          },
+        ],
+      },
+    },
+  };
+  const { response } = await rollup.call(call, { signer });
+  console.log("IGP configured:", response);
+};
+
+const main = async () => {
+  await createWarpRoute();
+  await configureIgp();
+};
+
+main().catch(console.error);
