@@ -1,5 +1,10 @@
 import { createStandardRollup } from "@sovereign-sdk/web3";
 import { Ed25519Signer } from "@sovereign-sdk/signers";
+import metadata from "../../registry/chains/metadata.yaml";
+import programIds from "../solana/environments/local/warp-routes/sealevel-sovereignsolana/program-ids.json";
+
+const SOLANA_DOMAIN_ID = metadata.sealevel.domainId;
+const SOLANA_WARP_ROUTE_ID = programIds.sealevel.hex;
 
 // tx_signer_private_key.json
 const privKey = new Uint8Array([
@@ -11,8 +16,6 @@ const signer = new Ed25519Signer(privKey);
 const rollup = await createStandardRollup<any>();
 
 const maxU128 = "340282366920938463463374607431768211455";
-const solanaWarpRouteId =
-  "0xcbb6266a1860446ea4ea06eaa02c443b64e3358756fb2e28e2476c57b3521ac7";
 const call = {
   warp: {
     register: {
@@ -26,12 +29,12 @@ const call = {
       },
       token_source: {
         Synthetic: {
-          remote_token_id: solanaWarpRouteId,
+          remote_token_id: SOLANA_WARP_ROUTE_ID,
           local_decimals: 9,
           remote_decimals: 9,
         },
       },
-      remote_routers: [[1337, solanaWarpRouteId]],
+      remote_routers: [[SOLANA_DOMAIN_ID, SOLANA_WARP_ROUTE_ID]],
       inbound_transferrable_tokens_limit: maxU128,
       inbound_limit_replenishment_per_slot: maxU128,
       outbound_transferrable_tokens_limit: maxU128,
