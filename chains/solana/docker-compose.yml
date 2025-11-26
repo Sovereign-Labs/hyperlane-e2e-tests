@@ -2,7 +2,7 @@ services:
   validator:
     build: .
     volumes:
-      - ./data:/data
+      - ./ledger:/ledger
       - ./environments:/opt/sealevel/environments
     entrypoint: ["/opt/solana/entrypoint.sh"]
     ports:
@@ -13,6 +13,7 @@ services:
     entrypoint: ["/opt/solana/init.sh"]
     volumes:
       - ./environments:/opt/sealevel/environments
+      - ../../registry:/opt/registry
     depends_on:
       validator:
         condition: service_started

@@ -1,0 +1,13 @@
+sealevel:
+  domainId: 1337
+  isTestnet: true
+  name: sealevel
+  rpcUrls:
+    - http: http://validator:8899
+    - http: http://127.0.0.1:8899
+sovereign:
+  domainId: 5555
+  isTestnet: true
+  name: sovereign
+  rpcUrls:
+    - http: http://127.0.0.1:12346

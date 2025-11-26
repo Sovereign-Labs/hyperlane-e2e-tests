@@ -3,7 +3,7 @@
 solana-test-validator \
   --reset \
   --quiet \
-  --ledger /data \
+  --ledger /ledger \
   --account E9VrvAdGRvCguN2XgXsgu9PNmMM3vZsU8LSUrM68j8ty /opt/solana/deployer_account.json \
   --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA /opt/spl/spl_token.so \
   --bpf-program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb /opt/spl/spl_token_2022.so \
