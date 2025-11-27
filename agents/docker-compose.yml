@@ -1,0 +1,77 @@
+x-depends-on: &depends-on
+  solana_hyp_init:
+    condition: service_completed_successfully
+  sovereign_hyp_init:
+    condition: service_completed_successfully
+
+x-image: &image
+  image: ghcr.io/ross-weir/hyperlane-agent:integration-12
+
+x-env: &env
+  environment:
+    CONFIG_FILES: /configs/config.json
+    # signer_keypair.json
+    HYP_CHAINS_SEALEVEL_SIGNER_KEY: 0xe2a7e5fd7ddac1d5937e3c86d1bb9ef95b6c45baec4d55d9f3c6c2b1d6ccf39b
+    # tx_signer_private_key.json
+    HYP_CHAINS_SOVEREIGN_SIGNER_KEY: 0x27c3774d52e71ea266a9c5256cd98b9ae67e62f2ae5ed34a668db8eaa83e1bac
+
+services:
+  hyp_relayer:
+    <<: *image
+    <<: *env
+    ports:
+      - "9091:9091"
+    command: >
+      /app/relayer
+      --db /hyperlane_db
+      --relayChains sealevel,sovereign
+      --allowLocalCheckpointSyncers true
+      --metrics-port 9091
+      --gasPaymentEnforcement '[{"type":"none"}]'
+    volumes:
+      - ./docker-data/validator-sealevel/signatures:/sealevel-signatures:ro
+      - ./docker-data/validator-sovereign/signatures:/sovereign-signatures:ro
+      - ./docker-data/relayer/db:/hyperlane_db:rw
+      - ./config.json:/configs/config.json:ro
+    depends_on:
+      <<: *depends-on
+  # address: 0x2c25Ab04F9cD2beC3D98921b02AFBE54B792cad0
+  hyp_validator_solana:
+    <<: *image
+    <<: *env
+    ports:
+      - "9092:9092"
+    command: >
+      /app/validator
+      --db /hyperlane_db
+      --originChainName sealevel
+      --checkpointSyncer.type localStorage
+      --checkpointSyncer.path /sealevel-signatures
+      --validator.key 0x7f174fd2dfa806db9f88cea78443626ce36df442ffa10814b2717ce254fd3754
+      --metrics-port 9092
+    volumes:
+      - ./docker-data/validator-sealevel/db:/hyperlane_db:rw
+      - ./docker-data/validator-sealevel/signatures:/sealevel-signatures:rw
+      - ./config.json:/configs/config.json:ro
+    depends_on:
+      <<: *depends-on
+  # address: 0xc0E05d5b970FcCF6000001B373bE6D66D7f0E36F
+  hyp_validator_sovereign:
+    <<: *image
+    <<: *env
+    ports:
+      - "9093:9093"
+    command: >
+      /app/validator
+      --db /hyperlane_db
+      --originChainName sovereign
+      --checkpointSyncer.type localStorage
+      --checkpointSyncer.path /sovereign-signatures
+      --validator.key 0x3b44dafaf67c3036ce3af984406e07f40eebc7288897f9bdad5e56b4c18e0bcd
+      --metrics-port 9093
+    volumes:
+      - ./docker-data/validator-sovereign/db:/hyperlane_db:rw
+      - ./docker-data/validator-sovereign/signatures:/sovereign-signatures:rw
+      - ./config.json:/configs/config.json:ro
+    depends_on:
+      <<: *depends-on

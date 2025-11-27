@@ -69,7 +69,7 @@ RUN sh -c "$(curl -sSfL https://release.anza.xyz/v2.0.24/install)"
 ENV PATH="/root/.local/share/solana/install/active_release/bin:${PATH}"
 
 # Solana setup & configs
-COPY entrypoint.sh init.sh deployer_account.json deployer_keypair.json /opt/solana/
+COPY entrypoint.sh init.sh /opt/solana/
 RUN chmod +x /opt/solana/entrypoint.sh
 RUN chmod +x /opt/solana/init.sh
 

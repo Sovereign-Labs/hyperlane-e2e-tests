@@ -1,12 +1,8 @@
 #!/bin/bash
 
-solana config set --url http://validator:8899
+set -e
 
-echo "Waiting for solana-test-validator to start..."
-until solana cluster-version 2>/dev/null; do
-  sleep 1
-done
-echo "solana-test-validator is ready!"
+solana config set --url http://solana_validator:8899
 
 base_dir="/opt/sealevel"
 env_name="local"
@@ -62,7 +58,7 @@ hyperlane-sealevel-client \
   multisig-ism-message-id \
   set-validators-and-threshold \
   --domain 5555 \
-  --validators 0x70997970c51812dc3a010c7d01b50e0d17dc79c8 \
+  --validators 0xc0E05d5b970FcCF6000001B373bE6D66D7f0E36F \
   --threshold 1 \
   --program-id Yvvy7bXg7kVdTL3TMxUynMPat4hDviQbRtAC8TCPnZt
 

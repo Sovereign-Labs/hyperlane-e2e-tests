@@ -1,0 +1,32 @@
+{
+  "chains": {
+    "sealevel": {
+      "domainId": 1337,
+      "isTestnet": true,
+      "name": "sealevel",
+      "rpcUrls": [
+        {
+          "http": "http://solana_validator:8899"
+        },
+        {
+          "http": "http://127.0.0.1:8899"
+        }
+      ]
+    },
+    "sovereign": {
+      "domainId": 5555,
+      "isTestnet": true,
+      "name": "sovereign",
+      "protocol": "sovereign",
+      "signer": {
+        "type": "sovereignKey",
+        "account_type": "solana"
+      },
+      "rpcUrls": [
+        {
+          "http": "http://sovereign_rollup:12346"
+        }
+      ]
+    }
+  }
+}

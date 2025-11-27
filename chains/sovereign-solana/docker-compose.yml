@@ -1,0 +1,24 @@
+services:
+  sovereign_rollup:
+    build:
+      context: ./rollup
+      dockerfile: integrations/rollup/Dockerfile.mock
+    privileged: true
+    volumes:
+      - ./rollup/test-data/docker/da:/mnt/da
+      - ./rollup/test-data/docker/state:/mnt/state
+      - ./rollup/configs/mock/rollup-dockerized.toml:/app/config/rollup.toml:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:12346/healthcheck"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    ports:
+      - "12346:12346"
+  sovereign_hyp_init:
+    build: .
+    environment:
+      SOVEREIGN_ROLLUP_URL: http://sovereign_rollup:12346
+    depends_on:
+      sovereign_rollup:
+        condition: service_healthy

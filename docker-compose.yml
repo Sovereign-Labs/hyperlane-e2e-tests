@@ -1,0 +1,4 @@
+include:
+  - ./chains/sovereign-solana/docker-compose.yml
+  - ./chains/solana/docker-compose.yml
+  - ./agents/docker-compose.yml

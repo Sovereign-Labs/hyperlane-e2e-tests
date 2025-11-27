@@ -1,10 +1,11 @@
 import { createStandardRollup } from "@sovereign-sdk/web3";
 import { Ed25519Signer } from "@sovereign-sdk/signers";
-import metadata from "../../registry/chains/metadata.yaml";
-import programIds from "../solana/environments/local/warp-routes/sealevel-sovereignsolana/program-ids.json";
 
-const SOLANA_DOMAIN_ID = metadata.sealevel.domainId;
-const SOLANA_WARP_ROUTE_ID = programIds.sealevel.hex;
+// taken from ../../registry/chains/metadata.yaml
+const SOLANA_DOMAIN_ID = 1337;
+// taken from ../solana/environments/local/warp-routes/sealevel-sovereignsolana/program-ids.json
+const SOLANA_WARP_ROUTE_ID =
+  "0xcbb6266a1860446ea4ea06eaa02c443b64e3358756fb2e28e2476c57b3521ac7";
 
 // tx_signer_private_key.json
 const privKey = new Uint8Array([
@@ -13,7 +14,10 @@ const privKey = new Uint8Array([
 ]);
 const deployerAddress = "7bWFTGcxY59KfAc5p7SaBaPieQkcSBXs7xCyRoL7vPtf";
 const signer = new Ed25519Signer(privKey);
-const rollup = await createStandardRollup<any>();
+const rollup = await createStandardRollup<any>({
+  // if env var not set defaults to http://localhost:12346
+  url: process.env.SOVEREIGN_ROLLUP_URL,
+});
 
 const createWarpRoute = async () => {
   const maxU128 = "340282366920938463463374607431768211455";
@@ -25,7 +29,7 @@ const createWarpRoute = async () => {
         ism: {
           MessageIdMultisig: {
             threshold: 1,
-            validators: ["0x70997970C51812dc3A010C7d01b50e0d17dc79C8"],
+            validators: ["0x2c25Ab04F9cD2beC3D98921b02AFBE54B792cad0"],
           },
         },
         token_source: {

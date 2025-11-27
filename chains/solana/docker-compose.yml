@@ -1,19 +1,23 @@
 services:
-  validator:
+  solana_validator:
     build: .
     volumes:
-      - ./ledger:/ledger
-      - ./environments:/opt/sealevel/environments
+      - ./ledger:/ledger:rw
     entrypoint: ["/opt/solana/entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "solana", "cluster-version", "-u", "localhost"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
     ports:
       - "8899:8899"
       - "8900:8900"
-  init:
+  solana_hyp_init:
     build: .
     entrypoint: ["/opt/solana/init.sh"]
     volumes:
-      - ./environments:/opt/sealevel/environments
-      - ../../registry:/opt/registry
+      - ./environments:/opt/sealevel/environments:rw
+      - ../../registry:/opt/registry:ro
     depends_on:
-      validator:
-        condition: service_started
+      solana_validator:
+        condition: service_healthy
