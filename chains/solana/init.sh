@@ -4,6 +4,7 @@ set -e
 
 solana config set --url http://solana_validator:8899
 
+cli="hyperlane-sealevel-client --keypair /opt/sealevel/environments/local/accounts/deployer_keypair.json"
 base_dir="/opt/sealevel"
 env_name="local"
 base_env_dir="$base_dir/environments"
@@ -13,8 +14,7 @@ chain="sealevel"
 domain=1337
 
 echo "Deploying hyperlane programs"
-hyperlane-sealevel-client \
-  --keypair /opt/solana/deployer_keypair.json \
+$cli \
   --compute-budget 200000 \
   core deploy \
   --environment $env_name \
@@ -26,8 +26,7 @@ echo "Hyperlane core programs deployed"
 
 echo "Configuring IGP"
 
-hyperlane-sealevel-client \
-  --keypair /opt/solana/deployer_keypair.json \
+$cli \
   igp configure \
   --gas-oracle-config-file $env_dir/gas-oracle-config.json \
   --registry $registry \
@@ -37,8 +36,7 @@ hyperlane-sealevel-client \
 echo "IGP configured"
 
 echo "Deploying warp route"
-hyperlane-sealevel-client \
-  --keypair /opt/solana/deployer_keypair.json \
+$cli \
   --compute-budget 200000 \
   warp-route deploy \
   --environment $env_name \
@@ -53,8 +51,7 @@ echo "Warp route deployed"
 
 echo "Configuring multisig ISM"
 
-hyperlane-sealevel-client \
-  --keypair /opt/solana/deployer_keypair.json \
+$cli \
   multisig-ism-message-id \
   set-validators-and-threshold \
   --domain 5555 \

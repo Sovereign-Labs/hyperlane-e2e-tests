@@ -3,6 +3,7 @@ services:
     build: .
     volumes:
       - ./ledger:/ledger:rw
+      - ./environments:/opt/sealevel/environments:ro
     entrypoint: ["/opt/solana/entrypoint.sh"]
     healthcheck:
       test: ["CMD", "solana", "cluster-version", "-u", "localhost"]

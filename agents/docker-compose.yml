@@ -17,8 +17,7 @@ x-env: &env
 
 services:
   hyp_relayer:
-    <<: *image
-    <<: *env
+    <<: [*image, *env]
     ports:
       - "9091:9091"
     command: >
@@ -37,8 +36,7 @@ services:
       <<: *depends-on
   # address: 0x2c25Ab04F9cD2beC3D98921b02AFBE54B792cad0
   hyp_validator_solana:
-    <<: *image
-    <<: *env
+    <<: [*image, *env]
     ports:
       - "9092:9092"
     command: >
@@ -57,8 +55,7 @@ services:
       <<: *depends-on
   # address: 0xc0E05d5b970FcCF6000001B373bE6D66D7f0E36F
   hyp_validator_sovereign:
-    <<: *image
-    <<: *env
+    <<: [*image, *env]
     ports:
       - "9093:9093"
     command: >

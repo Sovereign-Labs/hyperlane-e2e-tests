@@ -79,9 +79,20 @@ const configureIgp = async () => {
   console.log("IGP configured:", response);
 };
 
-const main = async () => {
-  await createWarpRoute();
-  await configureIgp();
+const isAlreadyRouteAlreadyExistsError = (error: any) => {
+  return (error as any)?.error?.details?.message?.includes(
+    "was already registered by sender",
+  );
 };
 
-main().catch(console.error);
+const main = async () => {
+  try {
+    await createWarpRoute();
+    await configureIgp();
+  } catch (error) {
+    if (isAlreadyRouteAlreadyExistsError(error)) return;
+    throw error;
+  }
+};
+
+main();
