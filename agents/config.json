@@ -4,6 +4,11 @@
       "domainId": 1337,
       "isTestnet": true,
       "name": "sealevel",
+      "protocol": "sealevel",
+      "mailbox": "GodWgCpbG683Zi8ii5qtXnfmGJGVWGWZ3hzzHavoAYag",
+      "merkleTreeHook": "GodWgCpbG683Zi8ii5qtXnfmGJGVWGWZ3hzzHavoAYag",
+      "interchainGasPaymaster": "DC2ZM1eRB448rdT7RLJEhgy3MdKYtRNeJggtn6zet7sn",
+      "validatorAnnounce": "6FX5tLg5MLs2FXeFygmhr8vGP9Fx3peBiF6wh5HsiYY4",
       "rpcUrls": [
         {
           "http": "http://solana_validator:8899"
@@ -15,6 +20,10 @@
       "isTestnet": true,
       "name": "sovereign",
       "protocol": "sovereign",
+      "mailbox": "0x0000000000000000000000000000000000000000",
+      "merkleTreeHook": "0x0000000000000000000000000000000000000000",
+      "interchainGasPaymaster": "0x0000000000000000000000000000000000000000",
+      "validatorAnnounce": "0x0000000000000000000000000000000000000000",
       "signer": {
         "type": "sovereignKey",
         "account_type": "solana"
