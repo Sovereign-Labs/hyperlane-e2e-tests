@@ -13,7 +13,12 @@
         {
           "http": "http://solana_validator:8899"
         }
-      ]
+      ],
+      "blocks": {
+        "confirmations": 1,
+        "estimateBlockTime": 0.4,
+        "reorgPeriod": 0
+      }
     },
     "sovereign": {
       "domainId": 5555,

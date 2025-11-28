@@ -4,6 +4,10 @@ services:
       context: ./rollup
       dockerfile: integrations/rollup/Dockerfile.mock
     privileged: true
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     volumes:
       - ./rollup/test-data/docker/da:/mnt/da
       - ./rollup/test-data/docker/state:/mnt/state
