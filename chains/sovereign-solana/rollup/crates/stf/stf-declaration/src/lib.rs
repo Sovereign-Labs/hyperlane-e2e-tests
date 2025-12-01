@@ -8,12 +8,13 @@
 use sov_hyperlane_integration::{
     warp::Warp, HyperlaneAddress, InterchainGasPaymaster, Mailbox as RawMailbox, MerkleTreeHook,
 };
+use sov_hyperlane_register_module::SolanaRegistration;
 #[cfg(feature = "native")]
 use sov_modules_api::macros::{expose_rpc, CliWallet};
 use sov_modules_api::prelude::*;
 use sov_modules_api::{DispatchCall, Event, Genesis, Hooks, MessageCodec, Spec};
 
-pub type Mailbox<S> = RawMailbox<S, Warp<S>>;
+pub type Mailbox<S> = RawMailbox<S, SolanaRegistration<S>>;
 
 /// The runtime defines the logic of the rollup.
 ///

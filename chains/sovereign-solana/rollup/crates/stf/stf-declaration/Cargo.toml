@@ -29,6 +29,7 @@ sov-capabilities = { workspace = true }
 sov-kernels = { workspace = true }
 sov-rollup-apis = { workspace = true, optional = true }
 sov-hyperlane-integration = { workspace = true }
+sov-hyperlane-register-module = { workspace = true }
 sov-evm = { workspace = true }
 sov-address = { workspace = true }
 
