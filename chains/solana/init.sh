@@ -4,7 +4,8 @@ set -e
 
 solana config set --url http://solana_validator:8899
 
-cli="hyperlane-sealevel-client --keypair /opt/sealevel/environments/local/accounts/deployer_keypair.json"
+keypair="/opt/sealevel/environments/local/accounts/deployer_keypair.json"
+cli="hyperlane-sealevel-client --keypair $keypair"
 base_dir="/opt/sealevel"
 env_name="local"
 base_env_dir="$base_dir/environments"
@@ -23,6 +24,14 @@ $cli \
   --chain $chain \
   --built-so-dir $base_dir
 echo "Hyperlane core programs deployed"
+
+echo "Deploying hyperlane-solana-register program"
+solana program deploy \
+  --keypair $keypair \
+  --program-id $env_dir/accounts/hyperlane_solana_sovereign_register-keypair.json \
+  /opt/hyperlane-solana-register/hyperlane_solana_sovereign_register.so
+
+echo "hyperlane-solana-register program deployed"
 
 echo "Configuring IGP"
 

@@ -42,6 +42,14 @@ ENV PATH="/root/.local/share/solana/install/active_release/bin:${PATH}"
 
 RUN chmod +x build-programs.sh && ./build-programs.sh all
 
+RUN echo "cac bust2"
+# Build our custom hyperlane solana register program
+# Probably not useful in most cases but included for completeness, we still want to test it
+WORKDIR /workspace
+RUN git clone https://github.com/Sovereign-Labs/hyperlane-solana-register.git
+WORKDIR /workspace/hyperlane-solana-register/solana/program
+RUN cargo build-sbf
+
 WORKDIR /workspace/hyperlane-monorepo/rust/sealevel
 RUN cargo build --release --bin hyperlane-sealevel-client
 
@@ -74,6 +82,7 @@ RUN chmod +x /usr/local/bin/hyperlane-sealevel-client
 
 # Get hyperlane sealevel programs
 COPY --from=sealevel-builder /workspace/hyperlane-monorepo/rust/sealevel/target/deploy /opt/sealevel
+COPY --from=sealevel-builder /workspace/hyperlane-solana-register/solana/target/deploy /opt/hyperlane-solana-register
 
 # Get SPL programs
 COPY --from=spl-builder /workspace/spl /opt/spl
