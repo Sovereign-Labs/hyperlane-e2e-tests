@@ -9,12 +9,14 @@ import {
   type ChainMetadata,
 } from "@hyperlane-xyz/sdk";
 import { chainMetadata as registryChainMetadata } from "@hyperlane-xyz/registry";
-import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { Keypair, Transaction } from "@solana/web3.js";
 import { ProtocolType } from "@hyperlane-xyz/utils";
 import agentConfig from "../agents/config.json";
 import tokenConfig from "../chains/solana/environments/local/warp-routes/sealevel-sovereignsolana/token-config.json";
 import deployedWarpRoutes from "../chains/solana/environments/local/warp-routes/sealevel-sovereignsolana/program-ids.json";
 import solanaKeypair from "../chains/solana/environments/local/accounts/signer_keypair.json";
+import { Ed25519Signer } from "@sovereign-sdk/signers";
+import { UnsignedTransaction } from "@sovereign-sdk/types";
 
 interface Account {
   privateKey: Uint8Array;
@@ -93,16 +95,45 @@ const warpCore = WarpCore.FromConfig(
   multiProvider,
   warpCoreConfig["sealevel/sovereign"]
 );
-
 const solanaToken = warpCore.findToken("sealevel", solanaTokenId);
-console.log("Origin Token:", solanaToken);
+const sovereignToken = warpCore.findToken("sovereign", sovereignTokenId);
 
-if (!solanaToken) {
-  throw new Error("Solana token not found in WarpCore");
+if (!solanaToken || !sovereignToken) {
+  throw new Error("Solana or Sovereign token not found in WarpCore");
 }
 
+const waitForBalanceSovereign = async (
+  expectedBalance: number,
+  timeoutSeconds = 60
+) => {
+  return new Promise<void>((resolve, reject) => {
+    const start = Date.now();
+    const interval = setInterval(async () => {
+      const waited = Date.now() - start;
+
+      if (waited > timeoutSeconds * 1000) {
+        clearInterval(interval);
+        reject(new Error("Timeout waiting for balance on sovereign"));
+        return;
+      }
+
+      const balance = await sovereignToken.getBalance(
+        multiProvider,
+        sovereignAccount.address
+      );
+
+      if (balance.amount >= expectedBalance) {
+        clearInterval(interval);
+        resolve();
+      }
+    }, 5000);
+  });
+};
+
+const transferAmount = 1;
+
 const warpTxns = await warpCore.getTransferRemoteTxs({
-  originTokenAmount: solanaToken.amount(1),
+  originTokenAmount: solanaToken.amount(transferAmount),
   destination: "sovereign",
   sender: solanaAccount.address,
   recipient: sovereignAccount.address,
@@ -110,7 +141,6 @@ const warpTxns = await warpCore.getTransferRemoteTxs({
 
 const keypair = Keypair.fromSecretKey(new Uint8Array(solanaKeypair));
 const provider = multiProvider.getSolanaWeb3Provider("sealevel");
-// const connection = new Connection("http://0.0.0.0:8899", "confirmed");
 
 for (const tx of warpTxns) {
   console.log(`Processing ${tx.category} transaction...`);
@@ -138,3 +168,40 @@ for (const tx of warpTxns) {
 
   console.log(`Transaction confirmed: ${signature}`);
 }
+
+console.log("Waiting for balance on sovereign...");
+
+await waitForBalanceSovereign(transferAmount);
+
+console.log("Token successfully transferred to sovereign!");
+
+// Currently failing due to quote remote dispatch, we can probably just return 0 for remote gas estimate for now
+// https://github.com/Sovereign-Labs/hyperlane-monorepo/issues/19
+// console.log("Sending back to solana..");
+//
+// const preTransferBalance = await solanaToken.getBalance(
+//   multiProvider,
+//   solanaAccount.address
+// );
+// console.log(`Pre-transfer solana balance: ${preTransferBalance.amount}`);
+// const warpBackTxns = await warpCore.getTransferRemoteTxs({
+//   originTokenAmount: sovereignToken.amount(transferAmount),
+//   destination: "sealevel",
+//   sender: sovereignAccount.address,
+//   recipient: solanaAccount.address,
+// });
+// const sovereignProvider = await multiProvider.getSovereignProvider("sovereign");
+// const sovereignSigner = new Ed25519Signer(sovereignAccount.privateKey);
+//
+// for (const tx of warpBackTxns) {
+//   console.log(`Processing ${tx.category} transaction...`);
+//
+//   const { response } = await sovereignProvider.signAndSubmitTransaction(
+//     tx.transaction as UnsignedTransaction<{}>,
+//     { signer: sovereignSigner }
+//   );
+//
+//   console.log(`Sovereign tx: ${response.id} (status: ${response.status})`);
+// }
+//
+// console.log("Waiting for balance on solana...");
