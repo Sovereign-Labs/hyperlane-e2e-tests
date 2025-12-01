@@ -42,7 +42,6 @@ ENV PATH="/root/.local/share/solana/install/active_release/bin:${PATH}"
 
 RUN chmod +x build-programs.sh && ./build-programs.sh all
 
-RUN echo "cac bust2"
 # Build our custom hyperlane solana register program
 # Probably not useful in most cases but included for completeness, we still want to test it
 WORKDIR /workspace
