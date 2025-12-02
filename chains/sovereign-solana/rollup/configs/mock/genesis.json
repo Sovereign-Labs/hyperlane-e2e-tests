@@ -83,5 +83,6 @@
   "interchain_gas_paymaster": null,
   "merkle_tree_hook": null,
   "warp": null,
-  "value_setter": null
+  "value_setter": null,
+  "solana_registration": null
 }
