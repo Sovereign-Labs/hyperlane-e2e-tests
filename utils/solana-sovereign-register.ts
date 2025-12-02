@@ -116,8 +116,6 @@ export async function executeRegisterProgram(
     );
     const instruction = new HyperlaneRegisterInstruction(registerMessage);
 
-    console.log("instruction", instruction);
-
     // Serialize the instruction data
     const instructionData = borsh.serialize(SCHEMA, instruction);
 
@@ -166,7 +164,6 @@ export async function executeRegisterProgram(
         isWritable: true,
       },
     ];
-    console.log(keys);
 
     // Create the transaction instruction
     const registerInstruction = new TransactionInstruction({
@@ -186,9 +183,7 @@ export async function executeRegisterProgram(
       {
         commitment: "confirmed",
       }
-    ).catch((error) => {
-      throw error;
-    });
+    );
 
     console.log("Transaction confirmed!");
     console.log("Signature:", signature);
