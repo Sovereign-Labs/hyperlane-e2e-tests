@@ -87,4 +87,6 @@ where
     /// The StateConsistency module, used for acceptance testing
     #[cfg(feature = "acceptance-testing")]
     pub state_consistency: sov_test_state_consistency::StateConsistency<S>,
+    /// Hyperlane Solana registration module
+    pub solana_registration: SolanaRegistration<S>,
 }
