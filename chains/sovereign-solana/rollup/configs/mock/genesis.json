@@ -84,5 +84,17 @@
   "merkle_tree_hook": null,
   "warp": null,
   "value_setter": null,
-  "solana_registration": null
+  "solana_registration": {
+    "admin": "7bWFTGcxY59KfAc5p7SaBaPieQkcSBXs7xCyRoL7vPtf",
+    "deployment": {
+      "domain_id": 1337,
+      "program_id": "HX6EowhA5XwWj29iTFeqhprg1gUxHgv6RNUu4bRtUgob"
+    },
+    "ism": {
+      "MessageIdMultisig": {
+        "threshold": 1,
+        "validators": ["0x2c25Ab04F9cD2beC3D98921b02AFBE54B792cad0"]
+      }
+    }
+  }
 }
