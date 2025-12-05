@@ -91,8 +91,10 @@ const main = async () => {
     await configureIgp();
   } catch (error) {
     if (isRouteAlreadyExistsError(error)) return;
+    console.log("Error occurred:", JSON.stringify(error, null, 2));
     throw error;
   }
+  console.log("Setup completed successfully");
 };
 
 main();

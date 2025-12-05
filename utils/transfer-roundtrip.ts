@@ -104,7 +104,7 @@ if (!solanaToken || !sovereignToken) {
 
 const waitForBalanceSovereign = async (
   expectedBalance: number,
-  timeoutSeconds = 60
+  timeoutSeconds = 120
 ) => {
   return new Promise<void>((resolve, reject) => {
     const start = Date.now();

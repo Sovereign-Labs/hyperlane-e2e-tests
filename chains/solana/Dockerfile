@@ -47,7 +47,8 @@ RUN chmod +x build-programs.sh && ./build-programs.sh all
 WORKDIR /workspace
 RUN git clone https://github.com/Sovereign-Labs/hyperlane-solana-register.git
 WORKDIR /workspace/hyperlane-solana-register/solana/program
-RUN cargo build-sbf
+RUN export HYPERLANE_MAILBOX_PUBKEY="GodWgCpbG683Zi8ii5qtXnfmGJGVWGWZ3hzzHavoAYag" && \
+    cargo build-sbf --features debug-logs
 
 WORKDIR /workspace/hyperlane-monorepo/rust/sealevel
 RUN cargo build --release --bin hyperlane-sealevel-client
