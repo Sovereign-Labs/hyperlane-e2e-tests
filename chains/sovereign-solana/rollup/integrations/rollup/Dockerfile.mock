@@ -16,7 +16,6 @@ COPY . .
 ENV SOV_PROVER_MODE=skip
 ENV SKIP_GUEST_BUILD=1
 ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
-ENV SOV_HYPERLANE_SOLANA_NETWORK=localnet
 
 RUN --mount=type=ssh \
     mkdir -p /root/.ssh && \
