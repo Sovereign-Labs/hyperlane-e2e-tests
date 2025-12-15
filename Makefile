@@ -5,10 +5,10 @@ clean:
 	rm -rf ./agents/docker-data
 
 start:
-	docker compose up -d
 ifdef WITH_OBSERVABILITY
 	docker compose -f tools/sov-observability/docker-compose.yml up -d
 endif
+	docker compose up -d
 
 stop:
 	docker compose down
