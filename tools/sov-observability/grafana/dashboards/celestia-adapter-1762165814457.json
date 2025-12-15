@@ -1,0 +1,1383 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 15,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "Adapter Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "orange",
+                "value": 80
+              },
+              {
+                "color": "yellow",
+                "value": 90
+              },
+              {
+                "color": "green",
+                "value": 99
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 0,
+        "y": 1
+      },
+      "id": 23,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] == \"${host}\")\n  |> filter(fn: (r) =>\n      (r._measurement == \"sov_celestia_adapter_header_get_by_height\" \n      or r._measurement == \"sov_celestia_adapter_header_network_head\"\n      or r._measurement == \"sov_celestia_adapter_share_get_namespace_data\"\n      or r._measurement == \"sov_celestia_adapter_state_submit_pay_for_blob\"\n      or r._measurement == \"sov_celestia_adapter_blob_get_all\")\n  )\n  |> map(fn: (r) => ({\n    r with\n    success: if r[\"is_success\"] == \"1\" then 1.0 else 0.0,\n    total: 1.0\n  }))\n  |> group()\n  |> reduce(\n    identity: {success: 0.0, total: 0.0},\n    fn: (r, accumulator) => ({\n      success: accumulator.success + r.success,\n      total: accumulator.total + r.total\n    })\n  )\n  |> map(fn: (r) => ({\n    _value: (r.success / r.total) * 100.0\n  }))",
+          "refId": "A"
+        }
+      ],
+      "title": "API Calls Success Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "description": "For all API calls",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "orange",
+                "value": 100
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "green",
+                "value": 1000
+              }
+            ]
+          },
+          "unit": "sishort"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 3,
+        "y": 1
+      },
+      "id": 24,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] == \"${host}\")\n  |> filter(fn: (r) =>\n      (r._measurement == \"sov_celestia_adapter_header_get_by_height\" \n      or r._measurement == \"sov_celestia_adapter_header_network_head\"\n      or r._measurement == \"sov_celestia_adapter_share_get_namespace_data\"\n      or r._measurement == \"sov_celestia_adapter_state_submit_pay_for_blob\"\n      or r._measurement == \"sov_celestia_adapter_blob_get_all\")\n      and r._field == \"response_time_us\"\n  )\n  |> group()\n  |> count()\n  |> map(fn: (r) => ({\n      r with _value: float(v: r._value) / float(v: uint(v: v.timeRangeStop) - uint(v: v.timeRangeStart)) * 60000000000.0\n  }))",
+          "refId": "A"
+        }
+      ],
+      "title": "Avg. API Calls Per Minute",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "orange",
+                "value": 100
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "green",
+                "value": 1000
+              }
+            ]
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 6,
+        "y": 1
+      },
+      "id": 26,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] == \"${host}\")\n  |> filter(fn: (r) => r._measurement == \"sov_celestia_adapter_submit_blob\" and r._field == \"bytes\")\n  |> sum()\n  |> map(fn: (r) => ({\n      r with _value: r._value / float(v: int(v: v.timeRangeStop) - int(v: v.timeRangeStart)) * 1000000000.0\n  }))",
+          "refId": "A"
+        }
+      ],
+      "title": "Avg. Blob Throughput",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "orange",
+                "value": 100
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "green",
+                "value": 1000
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 9,
+        "y": 1
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] == \"${host}\")\n  |> filter(fn: (r) => r._measurement == \"sov_celestia_adapter_submit_blob\" and r._field == \"bytes\")\n  |> sum()",
+          "refId": "A"
+        }
+      ],
+      "title": "Blob data submitted",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "description": "Successful batch blob submission",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "orange",
+                "value": 100
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "green",
+                "value": 1000
+              }
+            ]
+          },
+          "unit": "sishort"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 12,
+        "y": 1
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] == \"${host}\")\n  |> filter(fn: (r) =>\n    r._measurement == \"sov_celestia_adapter_submit_blob\"\n    and r[\"namespace\"] == \"batch\" and r._field == \"bytes\"\n  )\n  |> count()",
+          "refId": "A"
+        }
+      ],
+      "title": "Batch Blobs Submitted",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "orange",
+                "value": 80
+              },
+              {
+                "color": "yellow",
+                "value": 90
+              },
+              {
+                "color": "green",
+                "value": 99
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 15,
+        "y": 1
+      },
+      "id": 19,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] == \"${host}\")\n  |> filter(fn: (r) =>\n    r._measurement == \"sov_celestia_adapter_state_submit_pay_for_blob\"\n    and r[\"namespace\"] == \"batch\"\n  )\n  |> map(fn: (r) => ({\n    r with\n    success: if r[\"is_success\"] == \"1\" then 1.0 else 0.0,\n    total: 1.0\n  }))\n  |> group()\n  |> reduce(\n    identity: {success: 0.0, total: 0.0},\n    fn: (r, accumulator) => ({\n      success: accumulator.success + r.success,\n      total: accumulator.total + r.total\n    })\n  )\n  |> map(fn: (r) => ({\n    _value: (r.success / r.total) * 100.0\n  }))",
+          "refId": "A"
+        }
+      ],
+      "title": "Batch Submission Success Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "orange",
+                "value": 100
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "green",
+                "value": 1000
+              }
+            ]
+          },
+          "unit": "sishort"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 18,
+        "y": 1
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] == \"${host}\")\n  |> filter(fn: (r) =>\n    r._measurement == \"sov_celestia_adapter_submit_blob\"\n    and r[\"namespace\"] == \"proof\" and r._field == \"bytes\"\n  )\n  |> count()",
+          "refId": "A"
+        }
+      ],
+      "title": "Proof Blobs Submitted",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "orange",
+                "value": 80
+              },
+              {
+                "color": "yellow",
+                "value": 90
+              },
+              {
+                "color": "green",
+                "value": 99
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 21,
+        "y": 1
+      },
+      "id": 22,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) => r[\"host\"] == \"${host}\")\n  |> filter(fn: (r) =>\n    r._measurement == \"sov_celestia_adapter_state_submit_pay_for_blob\"\n    and r[\"namespace\"] == \"proof\"\n  )\n  |> map(fn: (r) => ({\n    r with\n    success: if r[\"is_success\"] == \"1\" then 1.0 else 0.0,\n    total: 1.0\n  }))\n  |> group()\n  |> reduce(\n    identity: {success: 0.0, total: 0.0},\n    fn: (r, accumulator) => ({\n      success: accumulator.success + r.success,\n      total: accumulator.total + r.total\n    })\n  )\n  |> map(fn: (r) => ({\n    _value: (r.success / r.total) * 100.0\n  }))",
+          "refId": "A"
+        }
+      ],
+      "title": "Proof Submission Success Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "description": "Response time of individual API call",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": -3,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "µs"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "mean",
+            "max",
+            "lastNotNull",
+            "p50",
+            "p99"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "50th %",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "agg_func = \"${agg_func}\"\n\ndata = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) =>\n    r.host == \"${host}\" \n    and (\n      r._measurement == \"sov_celestia_adapter_header_get_by_height\" \n      or r._measurement == \"sov_celestia_adapter_header_network_head\"\n      or r._measurement == \"sov_celestia_adapter_share_get_namespace_data\"\n      or r._measurement == \"sov_celestia_adapter_state_submit_pay_for_blob\"\n      or r._measurement == \"sov_celestia_adapter_blob_get_all\"\n      )\n  )\n  |> drop(columns: [\"host\"])\n\n\nif agg_func == \"raw\" then\n  data\nelse if agg_func == \"median\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: median)\nelse if agg_func == \"mean\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: mean)\nelse if agg_func == \"p90\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 0.90, column: column))\nelse if agg_func == \"p99\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 0.99, column: column))\nelse if agg_func == \"max\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 1.0, column: column))\nelse\n  data |> aggregateWindow(every: ${agg_interval}, fn: median)",
+          "refId": "A"
+        }
+      ],
+      "title": "API Calls",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Submit blob time",
+            "axisPlacement": "auto",
+            "axisSoftMax": -3,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "µs"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bytes"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "decbytes"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Blob size"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "mean",
+            "max",
+            "lastNotNull",
+            "p50",
+            "p99"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "50th %",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "agg_func = \"${agg_func}\"\n\ndata = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) =>\n    r.host == \"${host}\" \n    and r._measurement == \"sov_celestia_adapter_submit_blob\"\n    and r._field != \"namespace\"\n    and r._field != \"da_height\"\n  )\n  |> group(columns: [\"_field\"])\n\nif agg_func == \"raw\" then\n  data\nelse if agg_func == \"median\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: median)\nelse if agg_func == \"mean\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: mean)\nelse if agg_func == \"p90\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 0.90, column: column))\nelse if agg_func == \"p99\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 0.99, column: column))\nelse if agg_func == \"max\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 1.0, column: column))\nelse\n  data |> aggregateWindow(every: ${agg_interval}, fn: median)",
+          "refId": "A"
+        }
+      ],
+      "title": "Submit Blob Times",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": -3,
+            "barAlignment": 0,
+            "barWidthFactor": 0.3,
+            "drawStyle": "bars",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 600000,
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "dash": [
+                10,
+                10
+              ],
+              "fill": "dash"
+            },
+            "lineWidth": 10,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 300000,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "rotrpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 25,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "mean",
+            "max",
+            "lastNotNull",
+            "p50",
+            "p99"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "50th %",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "agg_func = \"${agg_func}\"\n\ndata = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) =>\n    r.host == \"${host}\" \n    and (\n      r._measurement == \"sov_celestia_adapter_header_get_by_height\" \n      or r._measurement == \"sov_celestia_adapter_header_network_head\"\n      or r._measurement == \"sov_celestia_adapter_share_get_namespace_data\"\n      or r._measurement == \"sov_celestia_adapter_state_submit_pay_for_blob\"\n      or r._measurement == \"sov_celestia_adapter_blob_get_all\"\n      )\n  )\n  |> drop(columns: [\"host\", \"namespace\"])\n  |> group(columns: [\"_measurement\", \"is_success\"], mode: \"by\")\n  |> aggregateWindow(\n      every: 30s,\n      fn: count,\n      createEmpty: false\n  )\n  |> map(fn: (r) => ({\n      r with\n      _value: float(v: r._value) * 2.0\n  }))\n\nif agg_func == \"raw\" then\n  data\nelse if agg_func == \"median\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: median)\nelse if agg_func == \"mean\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: mean)\nelse\n  data |> aggregateWindow(every: ${agg_interval}, fn: mean)",
+          "refId": "A"
+        }
+      ],
+      "title": "API Calls per minute",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": -3,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "µs"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "mean",
+            "max",
+            "lastNotNull",
+            "p50",
+            "p99"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "50th %",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "agg_func = \"${agg_func}\"\n\ndata = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) =>\n    r.host == \"${host}\" \n    and r._measurement == \"sov_celestia_adapter_get_block\"  \n    and r._field != \"height\" \n    and r._field != \"square_width\" \n    and r._field != \"batch_rows\" \n    and r._field != \"batch_shares\"\n    and r._field != \"proof_rows\" \n    and r._field != \"proof_shares\"\n  )\n  |> group(columns: [\"_field\"])\n\nif agg_func == \"raw\" then\n  data\nelse if agg_func == \"median\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: median)\nelse if agg_func == \"mean\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: mean)\nelse if agg_func == \"p90\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 0.90, column: column))\nelse if agg_func == \"p99\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 0.99, column: column))\nelse if agg_func == \"max\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 1.0, column: column))\nelse\n  data |> aggregateWindow(every: ${agg_interval}, fn: median)",
+          "refId": "A"
+        }
+      ],
+      "title": "Fetch Block Times",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Shares",
+            "axisPlacement": "auto",
+            "axisSoftMax": -3,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/.*_rows/"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Rows"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 28
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "mean",
+            "max",
+            "lastNotNull",
+            "p50",
+            "p99"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "50th %",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.6.0+security-01",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS}"
+          },
+          "query": "agg_func = \"${agg_func}\"\n\ndata = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop:v.timeRangeStop)\n  |> filter(fn: (r) =>\n    r.host == \"${host}\" \n    and r._measurement == \"sov_celestia_adapter_get_block\"  \n    and r._field != \"height\" \n    and r._field != \"square_width\" \n    and r._field != \"total_time_us\" \n    and r._field != \"fetch_header_us\"\n    and r._field != \"futures_us\" \n    and r._field != \"build_data_us\"\n  )\n  |> group(columns: [\"_field\"])\n\nif agg_func == \"raw\" then\n  data\nelse if agg_func == \"median\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: median)\nelse if agg_func == \"mean\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: mean)\nelse if agg_func == \"p90\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 0.90, column: column))\nelse if agg_func == \"p99\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 0.99, column: column))\nelse if agg_func == \"max\" then\n  data |> aggregateWindow(every: ${agg_interval}, fn: (column, tables=<-) => tables |> quantile(q: 1.0, column: column))\nelse\n  data |> aggregateWindow(every: ${agg_interval}, fn: median)",
+          "refId": "A"
+        }
+      ],
+      "title": "Fetched Block Squares",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 41,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "influxdb",
+          "value": "febnee4svq96of"
+        },
+        "description": "",
+        "name": "DS",
+        "options": [],
+        "query": "influxdb",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "text": "sov-loki",
+          "value": "del27k3a8i328f"
+        },
+        "name": "LOKI_DS",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "text": "sov-dev",
+          "value": "sov-dev"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${DS}"
+        },
+        "definition": "buckets()",
+        "description": "",
+        "name": "bucket",
+        "options": [],
+        "query": {
+          "query": "buckets()"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 6,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "dev-docker-nikolai",
+          "value": "dev-docker-nikolai"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${DS}"
+        },
+        "definition": "import \"influxdata/influxdb/v1\"\nv1.tagValues(\n    bucket: v.bucket,\n    tag: \"host\",\n    predicate: (r) => true,\n    start: -1d\n)",
+        "description": "",
+        "name": "host",
+        "options": [],
+        "query": {
+          "query": "import \"influxdata/influxdb/v1\"\nv1.tagValues(\n    bucket: v.bucket,\n    tag: \"host\",\n    predicate: (r) => true,\n    start: -1d\n)"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {
+          "text": "p99",
+          "value": "p99"
+        },
+        "description": "Function used to aggregate the data. Raw means no aggregation",
+        "label": "Aggregation function",
+        "name": "agg_func",
+        "options": [
+          {
+            "selected": false,
+            "text": "raw",
+            "value": "raw"
+          },
+          {
+            "selected": false,
+            "text": "mean",
+            "value": "mean"
+          },
+          {
+            "selected": false,
+            "text": "median",
+            "value": "median"
+          },
+          {
+            "selected": false,
+            "text": "p90",
+            "value": "p90"
+          },
+          {
+            "selected": true,
+            "text": "p99",
+            "value": "p99"
+          },
+          {
+            "selected": false,
+            "text": "max",
+            "value": "max"
+          }
+        ],
+        "query": "raw,mean,median,p90,p99,max",
+        "type": "custom"
+      },
+      {
+        "auto": true,
+        "auto_count": 100,
+        "auto_min": "5s",
+        "current": {
+          "text": "$__auto",
+          "value": "$__auto"
+        },
+        "label": "Aggregation Interval",
+        "name": "agg_interval",
+        "options": [
+          {
+            "selected": false,
+            "text": "10s",
+            "value": "10s"
+          },
+          {
+            "selected": false,
+            "text": "30s",
+            "value": "30s"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "10s,30s,1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "refresh": 2,
+        "type": "interval"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Sovereign Celestia Adapter",
+  "uid": "ff2q1jcq486pse",
+  "version": 8
+}
