@@ -1,0 +1,85 @@
+logging {
+  level  = "debug"
+  format = "logfmt"
+}
+
+// Receivers
+otelcol.receiver.otlp "otlp_receiver" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+
+  output {
+    logs    = [otelcol.processor.batch.default.input]
+    traces  = [otelcol.processor.batch.default.input]
+  }
+}
+
+otelcol.processor.batch "default" {
+  output {
+    logs    = [otelcol.exporter.loki.default.input]
+    traces  = [otelcol.processor.attributes.custom_labels.input]
+  }
+}
+
+otelcol.processor.attributes "custom_labels" {
+  action {
+    key = "host"
+    action = "insert"
+    // Insert host name here:
+    value = "{HOSTNAME}"
+  }
+  output {
+    traces = [otelcol.exporter.otlp.sov_tempo.input]
+  }
+}
+
+// Exporters
+
+// Tempo
+otelcol.exporter.otlp "sov_tempo" {
+  client {
+    endpoint = "{TEMPO_HOST}"
+    auth     = otelcol.auth.basic.sov_tempo.handler
+  }
+}
+
+otelcol.auth.basic "sov_tempo" {
+  username = "{ALLOY_USER}"
+  password = "{ALLOY_PASSWORD}"
+}
+
+
+// OTLP -> Loki
+otelcol.exporter.loki "default" {
+  forward_to = [
+   loki.process.add_hostname.receiver,
+  ]
+}
+
+loki.process "add_hostname" {
+  forward_to = [
+    loki.write.sov_loki.receiver,
+  ]
+
+  stage.static_labels {
+    values = {
+      host = "{HOSTNAME}",
+    }
+  }
+}
+
+// Sovereign Loki
+loki.write "sov_loki" {
+  endpoint {
+    url = "https://{LOKI_HOST}/loki/api/v1/push"
+
+    basic_auth {
+      username = "{ALLOY_USER}"
+      password = "{ALLOY_PASSWORD}"
+    }
+  }
+}

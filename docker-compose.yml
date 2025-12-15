@@ -1,0 +1,137 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    volumes:
+      - ./prometheus:/etc/prometheus
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - monitoring-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 1s
+      timeout: 30s
+      retries: 30
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources/
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards/
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    networks:
+      - monitoring-network
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+      - influxdb
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 1s
+      timeout: 30s
+      retries: 30
+  loki:
+    image: grafana/loki:3.3.2
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 1s
+      timeout: 30s
+      retries: 30
+  tempo:
+    image: grafana/tempo:2.6.1
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./grafana-tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - ./grafana-tempo/data:/tmp/tempo
+    networks:
+      - monitoring-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3200/ready"]
+      interval: 1s
+      timeout: 30s
+      retries: 30
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "127.0.0.1:${INFLUX_PORT:-8086}:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_ORG=sovereign
+      - DOCKER_INFLUXDB_INIT_BUCKET=sov-rollup
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=sovereign
+    volumes:
+      - type: bind
+        source: ./influxdb-data
+        target: /var/lib/influxdb2
+        consistency: consistent
+    networks:
+      - monitoring-network
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 1s
+      timeout: 30s
+      retries: 30
+  telegraf:
+    image: telegraf:1.34
+    depends_on:
+      - influxdb
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc:/host/etc:ro
+      # By default, it maps to the existing folder to not throw error and show something in the dashboard.
+      # But callers should specify environment variable to get actual data.
+      - ${ROLLUP_DATA_DIR:-.}:/mnt/rollup:ro
+    ports:
+      - "127.0.0.1:${TELEGRAF_PORT:-8094}:8094/udp"
+      - "127.0.0.1:${TELEGRAF_PORT:-8094}:8094/tcp"
+    environment:
+      - HOST_PROC=/host/proc
+      - HOST_SYS=/host/sys
+      - HOST_ETC=/host/etc
+    networks:
+      - monitoring-network
+    healthcheck:
+      test: ["CMD", "telegraf", "--test"]
+      interval: 1s
+      timeout: 30s
+      retries: 30
+  grafana-alloy:
+    image: grafana/alloy:v1.5.1
+    ports:
+      - "127.0.0.1:${ALLOY_GRPC_PORT:-4317}:4317"
+      - "127.0.0.1:${ALLOY_HTTP_PORT:-4318}:4318"
+    volumes:
+      - ./grafana-alloy/config.local.alloy:/etc/alloy/config.alloy
+      - ./grafana-alloy/storage:/var/lib/alloy/data
+    networks:
+      - monitoring-network
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:3101
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep alloy || exit 1"]
+      interval: 1s
+      timeout: 30s
+      retries: 30
+
+networks:
+  monitoring-network:

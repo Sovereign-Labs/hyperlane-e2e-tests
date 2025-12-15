@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-observability-stack:
+    name: Test Observability Stack
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Cache Docker images
+        id: cache-docker-images
+        uses: actions/cache@v3
+        with:
+          path: /tmp/docker-images
+          key: ${{ runner.os }}-docker-images-${{ hashFiles('docker-compose.yml') }}
+          
+      - name: Pull Docker images from cache
+        if: steps.cache-docker-images.outputs.cache-hit == 'true'
+        run: |
+          mkdir -p /tmp/docker-images
+          echo "Loading cached Docker images..."
+          for image_tar in /tmp/docker-images/*.tar; do
+            [ -f "$image_tar" ] && docker load -i "$image_tar" || true
+          done
+          
+      - name: Pull Docker images
+        if: steps.cache-docker-images.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/docker-images
+          echo "Pulling Docker images..."
+          docker compose pull --quiet
+          
+          # Save images to cache
+          echo "Saving Docker images to cache..."
+          docker images --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>" | while read -r image; do
+            echo "Saving $image..."
+            docker save "$image" -o "/tmp/docker-images/$(echo "$image" | tr '/:' '_').tar"
+          done
+      
+      - name: Start observability stack
+        run: |
+          echo "Starting observability stack with make start..."
+          make start
+        timeout-minutes: 30
+      
+      - name: Verify services are healthy
+        run: |
+          echo "Verifying all services are healthy..."
+          
+          # Check if all containers are running and healthy
+          UNHEALTHY_SERVICES=$(docker compose ps --format json | jq -r 'select(.Health != "healthy") | .Name')
+          
+          if [ -n "$UNHEALTHY_SERVICES" ]; then
+            echo "❌ The following services are not healthy:"
+            echo "$UNHEALTHY_SERVICES"
+            
+            echo "Service logs:"
+            docker compose logs
+            
+            exit 1
+          else
+            echo "✅ All services are healthy!"
+            
+            # List all running services with their health status
+            echo "Current service status:"
+            docker compose ps
+          fi
+      
+      - name: Test Grafana accessibility
+        run: |
+          echo "Testing Grafana accessibility..."
+          curl -f http://localhost:3000/api/health || exit 1
+          echo "✅ Grafana is accessible!"
+      
+      - name: Test Prometheus accessibility
+        run: |
+          echo "Testing Prometheus accessibility..."
+          curl -f http://localhost:9090/-/healthy || exit 1
+          echo "✅ Prometheus is accessible!"
+      
+      - name: Clean up
+        if: always()
+        run: |
+          echo "Cleaning up resources..."
+          make stop
+          docker system prune -f
