@@ -1,14 +1,16 @@
 #![allow(unused_doc_comments)]
 //! This module implements `Runtime` trait and ensures that it uses correct `CHAIN_HASH`
+use sov_address::{EthereumAddress, FromVmAddress};
 use sov_eip712_auth::{SchemaProvider, Secp256k1CryptoSpec};
 use sov_hyperlane_integration::HyperlaneAddress;
 use sov_modules_api::capabilities::TransactionAuthenticator;
 #[cfg(feature = "native")]
 use sov_modules_api::prelude::*;
+use sov_modules_api::Context;
 use sov_modules_api::OperatingMode;
 use sov_modules_api::Spec;
+use sov_modules_api::TxState;
 use sov_rollup_interface::da::DaSpec;
-
 pub use stf_starter_declaration::GenesisConfig;
 pub use stf_starter_declaration::Mailbox;
 use stf_starter_declaration::Runtime as RuntimeInner;
@@ -28,11 +30,11 @@ mod __generated {
 #[derive(Clone, Default)]
 pub struct Runtime<S: Spec>(pub(crate) RuntimeInner<S>)
 where
-    <S as Spec>::Address: HyperlaneAddress;
+    <S as Spec>::Address: HyperlaneAddress + FromVmAddress<EthereumAddress>;
 
 impl<S: Spec> SchemaProvider for Runtime<S>
 where
-    S::Address: HyperlaneAddress,
+    S::Address: HyperlaneAddress + FromVmAddress<EthereumAddress>,
 {
     const SCHEMA_BORSH: &'static [u8] = __generated::SCHEMA_BORSH;
 }
@@ -40,7 +42,7 @@ where
 impl<S: Spec> sov_modules_stf_blueprint::Runtime<S> for Runtime<S>
 where
     S::Da: DaSpec,
-    S::Address: HyperlaneAddress,
+    S::Address: HyperlaneAddress + FromVmAddress<EthereumAddress>,
     S::CryptoSpec: Secp256k1CryptoSpec,
 {
     // Make runtime authenticated.
@@ -50,6 +52,9 @@ where
 
     #[cfg(feature = "native")]
     type GenesisInput = std::path::PathBuf;
+
+    #[cfg(feature = "native")]
+    type ModuleExecutionConfig = sov_evm::execution_config::EvmExecutionConfig;
 
     type Auth = EvmAndEip712Authenticator<S, Self, Self>;
 
@@ -95,6 +100,7 @@ where
         auth_data: <Self::Auth as TransactionAuthenticator<S>>::Decodable,
     ) -> Self::Decodable {
         match auth_data {
+            EvmAndEip712AuthenticatorInput::Evm(call) => Self::Decodable::Evm(call),
             EvmAndEip712AuthenticatorInput::Eip712(call) => call,
             EvmAndEip712AuthenticatorInput::Standard(call) => call,
         }
@@ -107,5 +113,54 @@ where
                 sov_sequencer_registry::CallMessage::Register { .. }
             )
         )
+    }
+
+    fn is_unauthorized_system_tx(
+        &self,
+        call: &Self::Decodable,
+        context: &Context<S>,
+        state: &mut impl TxState<S>,
+    ) -> bool {
+        match call {
+            Self::Decodable::ChainState(sov_chain_state::CallMessage::SetOracleTime { .. }) => {
+                // Reject tx conservatively if a preferred sequencer is not registered
+                let Ok(Some((_, preferred_sequencer_address))) =
+                    self.0.sequencer_registry.get_preferred_sequencer(state)
+                else {
+                    return true;
+                };
+                // The tx is unauthorized if it's not from the preferred sequencer
+                context.sequencer() != &preferred_sequencer_address
+            }
+            // All non oracle calls are allowed
+            _ => false,
+        }
+    }
+
+    #[cfg(feature = "native")]
+    fn maybe_set_oracle_timestamp(
+        &self,
+        millis_since_epoch: i64,
+    ) -> Option<<Self as sov_modules_api::DispatchCall>::Decodable> {
+        Some(Self::Decodable::ChainState(
+            sov_chain_state::CallMessage::SetOracleTime {
+                milliseconds_since_epoch: millis_since_epoch,
+            },
+        ))
+    }
+
+    #[cfg(feature = "native")]
+    fn populate_pinned_cache(storage: &S::Storage) -> Option<sov_state::pinned_cache::PinnedCache> {
+        let buckets_and_limits =
+            sov_evm::Evm::<S>::default().get_pinned_cache_buckets_and_limits()?;
+        let mut pinned_cache = sov_state::pinned_cache::PinnedCache::default();
+        for (bucket_id, limit) in buckets_and_limits {
+            if let Err(e) =
+                pinned_cache.try_load_bucket_if_absent(bucket_id.clone(), storage, limit)
+            {
+                tracing::warn!(bucket_id = ?bucket_id, limit = ?limit, error = ?e, "EVM Failed to load bucket into pinned cache");
+            }
+        }
+        Some(pinned_cache)
     }
 }

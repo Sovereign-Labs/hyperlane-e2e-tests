@@ -14,8 +14,8 @@ use sov_stf_runner::{from_toml_path, RollupConfig};
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use sov_address::EthereumAddress;
 use sov_modules_api::capabilities::RollupHeight;
-use sov_modules_api::Base58Address;
 
 #[cfg(all(
     feature = "mock_da",
@@ -162,8 +162,8 @@ async fn new_rollup(
         "Starting rollup with config"
     );
 
-    let rollup_config: RollupConfig<Base58Address, DaService> = from_toml_path(&rollup_config_path)
-        .with_context(|| {
+    let rollup_config: RollupConfig<EthereumAddress, DaService> =
+        from_toml_path(&rollup_config_path).with_context(|| {
             format!(
                 "Failed to read rollup configuration from {}",
                 rollup_config_path.to_str().unwrap()
@@ -171,6 +171,15 @@ async fn new_rollup(
         })?;
 
     let rollup = StarterRollup::default();
+    let evm_pinned_cache_config = rollup_config_path
+        .parent()
+        .unwrap_or_else(|| {
+            panic!(
+                "Provided rollup config path {} does not have a parent directory",
+                rollup_config_path.display()
+            )
+        })
+        .join("evm_pinned_cache.json");
 
     rollup
         .create_new_rollup(
@@ -179,6 +188,7 @@ async fn new_rollup(
             prover_config,
             start_at_rollup_height,
             stop_at_rollup_height,
+            Some(evm_pinned_cache_config),
         )
         .await
 }

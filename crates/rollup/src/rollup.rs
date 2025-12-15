@@ -2,24 +2,35 @@
 //! StarterRollup provides a minimal self-contained rollup implementation
 
 use async_trait::async_trait;
+use axum::extract::{ConnectInfo, State};
+use axum::response::IntoResponse;
+use axum::routing::post;
+use axum::Json;
+use sov_address::{EthereumAddress, EvmCryptoSpec, FromVmAddress};
 use sov_db::ledger_db::LedgerDb;
 use sov_db::storage_manager::NomtStorageManager;
-use sov_eip712_auth::CryptoSpecWithSecp256k1;
+use sov_eip712_auth::Eip712AuthenticatorTrait;
 use sov_hyperlane_integration::HyperlaneAddress;
 use sov_mock_zkvm::MockCodeCommitment;
+use sov_modules_api::capabilities::TransactionAuthenticator;
 use sov_modules_api::configurable_spec::ConfigurableSpec;
 use sov_modules_api::rest::StateUpdateReceiver;
 use sov_modules_api::ZkVerifier;
-use sov_modules_api::{Base58Address, Spec};
+use sov_modules_api::{RawTx, Spec};
 use sov_modules_rollup_blueprint::pluggable_traits::PluggableSpec;
 use sov_modules_rollup_blueprint::proof_sender::SovApiProofSender;
 use sov_modules_rollup_blueprint::{FullNodeBlueprint, RollupBlueprint, SequencerCreationReceipt};
-use sov_rollup_interface::zk::Zkvm;
+use sov_modules_stf_blueprint::Runtime as RuntimeTrait;
+use sov_rest_utils::ApiResult;
+use sov_rollup_interface::da::DaBlobHash;
+use sov_rollup_interface::node::da::DaService as DaServiceTrait;
+use sov_sequencer::rest_api::{AcceptTx, TxInfoWithConfirmation};
+use std::net::SocketAddr;
 
 use sov_rollup_interface::execution_mode::Native;
 use sov_rollup_interface::node::SyncStatus;
 use sov_rollup_interface::zk::aggregated_proof::CodeCommitment;
-use sov_sequencer::ProofBlobSender;
+use sov_sequencer::{ProofBlobSender, SeqConfigExtension, Sequencer, TxStatus};
 use sov_state::nomt::prover_storage::NomtProverStorage;
 use sov_state::DefaultStorageSpec;
 use sov_state::Storage;
@@ -36,14 +47,14 @@ type NativeStorage = NomtProverStorage<
     DefaultStorageSpec<Hasher>,
     <DaSpec as sov_rollup_interface::da::DaSpec>::SlotHash,
 >;
-/// Rollup specification type.
-pub type RollupSpec<Da, InnerZkvm, OuterZkvm> = ConfigurableSpec<
+/// A configurable spec instance with EthereumAddress
+pub type EthSpec<Da, InnerZkvm, OuterZkvm> = ConfigurableSpec<
     Da,
     InnerZkvm,
     OuterZkvm,
-    Base58Address,
+    EthereumAddress,
     Native,
-    CryptoSpecWithSecp256k1<<<InnerZkvm as Zkvm>::Verifier as ZkVerifier>::CryptoSpec>,
+    EvmCryptoSpec,
     NativeStorage,
 >;
 
@@ -57,10 +68,11 @@ pub struct StarterRollup<M> {
 /// they can be easily swapped with alternative implementations as needed.
 impl RollupBlueprint<Native> for StarterRollup<Native>
 where
-    RollupSpec<DaSpec, InnerZkvm, OuterZkvm>: PluggableSpec,
-    <RollupSpec<DaSpec, InnerZkvm, OuterZkvm> as Spec>::Address: HyperlaneAddress,
+    EthSpec<DaSpec, InnerZkvm, OuterZkvm>: PluggableSpec,
+    <EthSpec<DaSpec, InnerZkvm, OuterZkvm> as Spec>::Address:
+        HyperlaneAddress + FromVmAddress<EthereumAddress>,
 {
-    type Spec = RollupSpec<DaSpec, InnerZkvm, OuterZkvm>;
+    type Spec = EthSpec<DaSpec, InnerZkvm, OuterZkvm>;
     type Runtime = Runtime<Self::Spec>;
 }
 
@@ -151,6 +163,71 @@ impl FullNodeBlueprint<Native> for StarterRollup<Native> {
     ) -> anyhow::Result<Self::ProofSender> {
         Ok(Self::ProofSender::new(sequence_number_provider))
     }
+
+    async fn sequencer_additional_apis<Seq>(
+        &self,
+        sequencer: Seq,
+        rollup_config: &RollupConfig<<Self::Spec as Spec>::Address, Self::DaService>,
+        shutdown_receiver: tokio::sync::watch::Receiver<()>,
+    ) -> anyhow::Result<sov_modules_api::NodeEndpoints>
+    where
+        Seq: Sequencer<Spec = Self::Spec, Rt = Self::Runtime, Da = Self::DaService>,
+    {
+        let config = rollup_config.sequencer.extension.as_ref().unwrap();
+        let eth_rpc_config = sov_ethereum::EthRpcConfig {
+            extension: SeqConfigExtension {
+                max_log_limit: config.max_log_limit,
+                response_size_limit: config.response_size_limit, // Limit our response size to 1MB, leaving 30kb for headers, overhead, and misestimation.
+            },
+            shutdown_receiver,
+        };
+
+        let axum_router = axum::Router::new()
+            .route("/sequencer/eip712_tx", post(accept_eip712_tx::<Seq>))
+            .with_state(sequencer.clone());
+
+        Ok(sov_modules_api::NodeEndpoints {
+            axum_router,
+            jsonrpsee_module: sov_ethereum::get_ethereum_rpc(eth_rpc_config, sequencer)
+                .remove_context(),
+            ..Default::default()
+        })
+    }
 }
 
 impl sov_modules_rollup_blueprint::WalletBlueprint<Native> for StarterRollup<Native> {}
+
+/// Handler for accepting EIP712 authenticated transactions
+async fn accept_eip712_tx<Seq>(
+    connect_info: ConnectInfo<SocketAddr>,
+    State(sequencer): State<Seq>,
+    tx: Json<AcceptTx>,
+) -> ApiResult<
+    TxInfoWithConfirmation<DaBlobHash<<Seq::Da as DaServiceTrait>::Spec>, Seq::Confirmation>,
+>
+where
+    Seq: Sequencer + 'static,
+    Seq::Rt: Eip712AuthenticatorTrait<Seq::Spec>,
+    <Seq::Rt as RuntimeTrait<Seq::Spec>>::Auth: TransactionAuthenticator<Seq::Spec>,
+{
+    let raw_tx = RawTx::new(tx.0.body.blob);
+    let encoded_tx = Seq::Rt::encode_with_eip712_auth(raw_tx);
+
+    // Submit to sequencer (similar to axum_accept_tx but with EIP712 auth)
+    let tx_with_hash = sequencer
+        .accept_tx(encoded_tx, connect_info.0.ip())
+        .await
+        .map_err(|e| {
+            if e.status.is_server_error() {
+                tracing::error!(error = ?e, "Error accepting EIP712 transaction");
+            }
+            IntoResponse::into_response(e)
+        })?;
+
+    Ok(TxInfoWithConfirmation {
+        id: tx_with_hash.tx_hash,
+        confirmation: tx_with_hash.confirmation,
+        status: TxStatus::Submitted,
+    }
+    .into())
+}
