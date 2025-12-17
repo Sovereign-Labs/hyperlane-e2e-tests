@@ -30,6 +30,7 @@ sov-eip712-auth = { workspace = true }
 anyhow = { workspace = true }
 alloy-consensus = { workspace = true, optional = true }
 borsh = { workspace = true }
+serde = { workspace = true }
 
 [build-dependencies]
 anyhow = { workspace = true }

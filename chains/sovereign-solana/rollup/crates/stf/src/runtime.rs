@@ -1,10 +1,12 @@
 #![allow(unused_doc_comments)]
 //! This module implements `Runtime` trait and ensures that it uses correct `CHAIN_HASH`
 use sov_eip712_auth::{SchemaProvider, Secp256k1CryptoSpec};
+use sov_hyperlane_integration::warp::WarpExecutionConfig;
 use sov_hyperlane_integration::HyperlaneAddress;
 use sov_modules_api::capabilities::TransactionAuthenticator;
 #[cfg(feature = "native")]
 use sov_modules_api::prelude::*;
+use sov_modules_api::ExecutionInit;
 use sov_modules_api::OperatingMode;
 use sov_modules_api::Spec;
 use sov_rollup_interface::da::DaSpec;
@@ -37,6 +39,26 @@ where
     const SCHEMA_BORSH: &'static [u8] = __generated::SCHEMA_BORSH;
 }
 
+#[derive(Clone, serde::Deserialize)]
+pub struct ModuleConfig<S: Spec> {
+    hyperlane: WarpExecutionConfig,
+    #[serde(skip)]
+    _marker: std::marker::PhantomData<S>,
+}
+
+impl<S: Spec> sov_modules_api::ModuleExecutionConfig for ModuleConfig<S> {
+    type Input = std::path::PathBuf;
+
+    fn configure(input: &Self::Input) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let contents = std::fs::read(input)?;
+        let config: Self = serde_json::from_slice(&contents)?;
+        tracing::info!("Initializing hyperlane execution config");
+        sov_hyperlane_integration::warp::Warp::<S>::init(&config.hyperlane)
+            .expect("Failed to init Hyperlane Warp module");
+        Ok(())
+    }
+}
+
 impl<S: Spec> sov_modules_stf_blueprint::Runtime<S> for Runtime<S>
 where
     S::Da: DaSpec,
@@ -52,7 +74,7 @@ where
     type GenesisInput = std::path::PathBuf;
 
     #[cfg(feature = "native")]
-    type ModuleExecutionConfig = ();
+    type ModuleExecutionConfig = ModuleConfig<S>;
 
     type Auth = EvmAndEip712Authenticator<S, Self, Self>;
 

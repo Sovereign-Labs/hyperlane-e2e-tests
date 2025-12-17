@@ -171,6 +171,10 @@ async fn new_rollup(
         })?;
 
     let rollup = StarterRollup::default();
+    let modules_config_input = rollup_config_path
+        .parent()
+        .map(|path| path.join("modules.json"))
+        .expect("Failed to construct modules config path");
 
     rollup
         .create_new_rollup(
@@ -179,7 +183,7 @@ async fn new_rollup(
             prover_config,
             start_at_rollup_height,
             stop_at_rollup_height,
-            None,
+            Some(modules_config_input),
         )
         .await
 }
