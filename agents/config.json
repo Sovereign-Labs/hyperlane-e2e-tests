@@ -39,6 +39,8 @@
         }
       ],
       "nativeToken": {
+        "name": "Sov",
+        "symbol": "SOV",
         "decimals": 9
       }
     }
