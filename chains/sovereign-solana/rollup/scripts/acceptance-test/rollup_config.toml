@@ -30,10 +30,7 @@ pruner_block_interval = 1000_000
 pruner_versions_to_keep = 100
 state_cache_size = 10000000000 # 10GB
 
-# We define the rollup's genesis to occur at block number `start_height`. The rollup will ignore
-# any blocks before this height
 [runner]
-genesis_height = 1  # Use a non-zero genesis height
 da_polling_interval_ms = 200
 
 [runner.http_config]
@@ -83,5 +80,11 @@ ideal_lag_behind_finalized_slot = 1
 # This warms up caches so the main transaction executor can run with ready-to-use data.
 # This variable determines the number of worker threads.
 num_cache_warmup_workers = 5
+
+[sequencer.preferred.postgres_config]
+postgres_connection_string = "postgres://postgres:{password}@localhost:5432/postgres"
+node_role = "Leader"
+node_id = "node0"
+
 [sequencer.extension]
 max_log_limit = 20000

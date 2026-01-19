@@ -82,7 +82,6 @@ run-docker-mock-da: ## Start docker container with MockDa
 			--privileged \
 			-v $(CURDIR)/test-data/docker/da:/mnt/da \
 			-v $(CURDIR)/test-data/docker/state:/mnt/state \
-			-v $(CURDIR)/configs/mock/rollup-dockerized.toml:/app/config/rollup.toml \
 			-p 12346:12346 \
 			rollup-starter:debug; \
 	else \
@@ -90,7 +89,6 @@ run-docker-mock-da: ## Start docker container with MockDa
 			--privileged \
 			-v $(CURDIR)/test-data/docker/da:/mnt/da \
 			-v $(CURDIR)/test-data/docker/state:/mnt/state \
-			-v $(CURDIR)/configs/mock/rollup-dockerized.toml:/app/config/rollup.toml \
 			-p 12346:12346 \
 			rollup-starter:debug; \
 	fi
@@ -121,7 +119,6 @@ print-hyperlane-ethtest-warp:
 	@cd integrations/hyperlane && docker compose -f docker-compose.hyp-evm.yml run --rm \
 		hyperlane-cli \
 		warp read \
-		--registry https://github.com/Sovereign-Labs/hyperlane-registry \
 		--registry /configs \
 		--chain ethtest \
 		--address $(shell grep "addressOrDenom:" integrations/hyperlane/configs/deployments/warp_routes/ETH/warp-route-deployment-config.yaml | cut -d'"' -f2)

@@ -24,6 +24,7 @@ sov-hyperlane-integration = { workspace = true }
 sov-bank = { workspace = true }
 sov-test-state-consistency = { workspace = true }
 sov-address = { workspace = true }
+sov-chain-state = { workspace = true }
 sov-evm = { workspace = true }
 sov-eip712-auth = { workspace = true }
 
@@ -63,6 +64,7 @@ native = [
     "sov-sequencer-registry/native",
     "sov-bank/native",
     "sov-address/native",
+    "sov-chain-state/native",
     "sov-mock-da?/native",
     "sov-celestia-adapter?/native",
     "sov-mock-zkvm/native",

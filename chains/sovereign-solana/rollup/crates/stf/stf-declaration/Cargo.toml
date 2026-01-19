@@ -69,6 +69,7 @@ native = [
 	"sov-kernels/native",
 	"sov-paymaster/native",
 	"sov-hyperlane-integration/native",
+	"sov-hyperlane-register-module/native",
 	"sov-operator-incentives/native",
 	"sov-revenue-share/native",
 	"sov-address/native",
