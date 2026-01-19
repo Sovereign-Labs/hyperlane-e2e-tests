@@ -16,7 +16,6 @@ services:
     volumes:
       - ./rollup/test-data/docker/da:/mnt/da
       - ./rollup/test-data/docker/state:/mnt/state
-      - ./rollup/configs/mock/rollup-dockerized.toml:/app/config/rollup.toml:ro
       - ./rollup/configs/mock/modules.json:/app/config/modules.json:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://0.0.0.0:12346/healthcheck"]

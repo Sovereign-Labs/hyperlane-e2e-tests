@@ -37,7 +37,10 @@
         {
           "http": "http://sovereign_rollup:12346"
         }
-      ]
+      ],
+      "nativeToken": {
+        "decimals": 9
+      }
     }
   }
 }
