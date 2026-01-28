@@ -14,13 +14,15 @@ use sov_state::User;
 
 /// See [`TransactionAuthenticator::Input`].
 #[derive(std::fmt::Debug, Clone, BorshDeserialize, BorshSerialize)]
-pub enum EvmAndEip712AuthenticatorInput<T = RawTx> {
+pub enum EvmAndEip712AuthenticatorInput<T = RawTx, U = RawTx> {
+    /// Authenticate using the EVM authenticator (not supported in this runtime).
+    Evm(T),
     /// Authenticate using an EIP712 signature, which expects a transaction encoded the same way as
     /// a standard sov transaction but the signature generated according to the EIP712 spec.
-    Eip712(T),
+    Eip712(U),
     /// Authenticate using the standard `sov-module` authenticator, which uses the default
     /// signature scheme and hashing algorithm defined in the rollup's [`Spec`].
-    Standard(T),
+    Standard(U),
 }
 
 /// EIP712 transaction authenticator. See [`TransactionAuthenticator`].
@@ -32,7 +34,8 @@ where
     Rt: Runtime<S> + DispatchCall<Spec = S>,
     SP: SchemaProvider,
 {
-    type Decodable = EvmAndEip712AuthenticatorInput<<Rt as DispatchCall>::Decodable>;
+    type Decodable =
+        EvmAndEip712AuthenticatorInput<sov_evm::CallMessage<S>, <Rt as DispatchCall>::Decodable>;
     type Input = EvmAndEip712AuthenticatorInput;
 
     fn authenticate<Accessor: ProvableStateReader<User, Spec = S> + GetGasPrice<Spec = S>>(
@@ -49,6 +52,14 @@ where
         })?;
 
         match input {
+            EvmAndEip712AuthenticatorInput::Evm(_) => {
+                Err(capabilities::AuthenticationError::FatalError(
+                    FatalError::Other(
+                        "EVM transactions are not supported in this runtime".to_string(),
+                    ),
+                    sov_rollup_interface::TxHash::new([0; 32]),
+                ))
+            }
             EvmAndEip712AuthenticatorInput::Eip712(tx) => {
                 let (tx_and_raw_hash, auth_data, runtime_call) =
                     sov_eip712_auth::authenticate::<_, S, Rt, SP>(&tx.data, state)?;
@@ -83,7 +94,8 @@ where
         let input: EvmAndEip712AuthenticatorInput = borsh::from_slice(&tx.data)?;
 
         match input {
-            EvmAndEip712AuthenticatorInput::Eip712(tx)
+            EvmAndEip712AuthenticatorInput::Evm(tx)
+            | EvmAndEip712AuthenticatorInput::Eip712(tx)
             | EvmAndEip712AuthenticatorInput::Standard(tx) => {
                 Ok(capabilities::calculate_hash::<S>(&tx.data))
             }
@@ -100,6 +112,11 @@ where
             })?;
 
         match &auth_variant {
+            EvmAndEip712AuthenticatorInput::Evm(_) => {
+                Err(FatalError::Other(
+                    "EVM transactions are not supported in this runtime".to_string(),
+                ))
+            }
             EvmAndEip712AuthenticatorInput::Standard(raw_tx) => {
                 let call = capabilities::decode_sov_tx::<S, Rt>(&raw_tx.data)?;
                 Ok(EvmAndEip712AuthenticatorInput::Standard(call))

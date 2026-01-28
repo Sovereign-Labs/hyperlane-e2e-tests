@@ -5,7 +5,7 @@ x-depends-on: &depends-on
     condition: service_completed_successfully
 
 x-image: &image
-  image: ghcr.io/ross-weir/hyperlane-agent:integration-12
+  image: hyperlane/latest
 
 x-env: &env
   environment:

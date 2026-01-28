@@ -37,7 +37,12 @@
         {
           "http": "http://sovereign_rollup:12346"
         }
-      ]
+      ],
+      "nativeToken": {
+        "name": "Sov",
+        "symbol": "SOV",
+        "decimals": 9
+      }
     }
   }
 }
