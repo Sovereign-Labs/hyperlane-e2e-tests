@@ -45,7 +45,7 @@ RUN chmod +x build-programs.sh && ./build-programs.sh all
 # Build our custom hyperlane solana register program
 # Probably not useful in most cases but included for completeness, we still want to test it
 WORKDIR /workspace
-RUN git clone --depth 1 --branch update-hyperlane-dep https://github.com/Sovereign-Labs/sovereign-sdk.git
+RUN git clone --depth 1 https://github.com/Sovereign-Labs/sovereign-sdk.git
 WORKDIR /workspace/sovereign-sdk/crates/module-system/module-implementations/extern/hyperlane-solana-register/solana/program
 RUN export HYPERLANE_MAILBOX_PUBKEY="GodWgCpbG683Zi8ii5qtXnfmGJGVWGWZ3hzzHavoAYag" && \
     cargo build-sbf --features debug-logs
