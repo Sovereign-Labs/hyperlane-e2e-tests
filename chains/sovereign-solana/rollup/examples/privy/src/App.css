@@ -1,114 +1,122 @@
 .container {
-  max-width: 800px;
+  max-width: 700px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: system-ui, sans-serif;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
 h1 {
-  color: #333;
-  margin-bottom: 2rem;
-  text-align: center;
+  margin: 0;
+  font-size: 1.5rem;
 }
 
-h2, h3 {
-  color: #444;
-  margin-bottom: 1rem;
-}
-
-.auth-section, .authenticated-section {
-  background: #f5f5f5;
-  border-radius: 8px;
-  padding: 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.user-info {
-  background: white;
-  border-radius: 6px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  border: 1px solid #e0e0e0;
-}
-
-.user-info p {
-  margin: 0.5rem 0;
-  color: #666;
+h3 {
+  margin-top: 0;
 }
 
 .transaction-section {
-  background: white;
-  border-radius: 6px;
+  background: #f9f9f9;
+  border-radius: 8px;
   padding: 1.5rem;
-  margin-bottom: 2rem;
-  border: 1px solid #e0e0e0;
 }
 
-.tx-preview {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  padding: 1rem;
-  margin: 1rem 0;
-  text-align: left;
-  font-family: 'Courier New', monospace;
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 0.75rem;
+  font-family: monospace;
   font-size: 0.9rem;
-  overflow-x: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+  box-sizing: border-box;
 }
 
 .primary-button {
-  background-color: #676FFF;
+  background: #676FFF;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  margin: 0.5rem;
+  margin-top: 1rem;
 }
 
 .primary-button:hover:not(:disabled) {
-  background-color: #5057e5;
+  background: #5057e5;
 }
 
 .primary-button:disabled {
-  background-color: #ccc;
+  background: #9ca3af;
   cursor: not-allowed;
 }
 
-.secondary-button {
-  background-color: #f8f9fa;
-  color: #333;
-  border: 1px solid #dee2e6;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin: 0.5rem;
-}
-
-.secondary-button:hover {
-  background-color: #e9ecef;
-}
-
-.status-message {
+.message {
   margin-top: 1rem;
   padding: 1rem;
+  border-radius: 6px;
+}
+
+.message.success {
+  background: #065f46;
+  border: 1px solid #047857;
+  color: #ffffff;
+}
+
+.message.success strong {
+  color: #a7f3d0;
+}
+
+.message.error {
+  background: #991b1b;
+  border: 1px solid #b91c1c;
+  color: #ffffff;
+}
+
+.message.error strong {
+  color: #fecaca;
+}
+
+.message pre {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.75rem;
   border-radius: 4px;
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.status-message.error {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+.message code {
+  font-family: monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
 }
 
-p {
-  line-height: 1.6;
-  color: #333;
+.connect-prompt {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+button {
+  font-family: inherit;
 }

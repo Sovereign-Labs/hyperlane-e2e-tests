@@ -12,6 +12,10 @@ on:
   merge_group:
     types: ["checks_requested"]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   CARGO_NET_GIT_FETCH_WITH_CLI: true
@@ -21,7 +25,10 @@ jobs:
     uses: ./.github/workflows/reusable-job.yml
     with:
       job-name: "Lint"
-      command: "make lint"
+      env-vars: 'RUSTFLAGS="-D warnings"'
+      # Lints native project, but also compiles guests on bare metal.
+      # This to enforce update of Cargo.lock fo guests
+      command: "make lint && make check"
       setup-zepter: true
     secrets: inherit
 
@@ -39,7 +46,7 @@ jobs:
     uses: ./.github/workflows/reusable-job.yml
     with:
       job-name: "Build Celestia SP1"
-      env-vars: "SKIP_GUEST_BUILD=risc0"
+      env-vars: "SKIP_GUEST_BUILD=risc0 RUSTFLAGS='-D warnings'"
       command: "cargo build --no-default-features --features celestia_da,sp1"
       setup-sp1: true
     secrets: inherit
@@ -48,7 +55,7 @@ jobs:
     uses: ./.github/workflows/reusable-job.yml
     with:
       job-name: "Build Celestia RISC0"
-      env-vars: "SKIP_GUEST_BUILD=sp1"
+      env-vars: "SKIP_GUEST_BUILD=sp1 RUSTFLAGS='-D warnings'"
       command: "cargo build --no-default-features --features celestia_da,risc0"
       setup-risc0: true
     secrets: inherit
@@ -58,7 +65,7 @@ jobs:
     uses: ./.github/workflows/reusable-job.yml
     with:
       job-name: "Run README"
-      env-vars: "SKIP_GUEST_BUILD=1"
+      env-vars: "SKIP_GUEST_BUILD=1 RUSTFLAGS='-D warnings'"
       runner-size: "16x64"
       command: |
         bashtestmd --input README.md --output scripts/rollup-starter.sh --tag=test-ci
@@ -72,7 +79,7 @@ jobs:
     uses: ./.github/workflows/reusable-job.yml
     with:
       job-name: "Run README_EXTERNAL_MOCK_DA"
-      env-vars: "SKIP_GUEST_BUILD=1"
+      env-vars: "SKIP_GUEST_BUILD=1 RUSTFLAGS='-D warnings'"
       runner-size: "16x64"
       command: |
         bashtestmd --input README_EXTERNAL_MOCK_DA.md --output scripts/rollup-starter-external-da.sh --tag=test-ci
