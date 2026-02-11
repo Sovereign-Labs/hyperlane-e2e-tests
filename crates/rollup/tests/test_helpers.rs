@@ -39,7 +39,6 @@ pub async fn start_rollup(
             concurrent_sync_tasks: 1,
             save_tx_bodies: false,
             pre_fetched_blocks_capacity: NonZero::new(3).unwrap(),
-            da_total_timeout_secs: 3_600,
         },
         da: da_config,
         proof_manager: ProofManagerConfig {
@@ -89,6 +88,10 @@ pub async fn start_rollup(
         .await
         .unwrap();
 
+    let socket = rollup.runner.axum_socket_address().unwrap();
+
+    rest_reporting_channel.send(socket).unwrap();
+
     // Ensure there is a non-zero finalized block
     rollup
         .runner
@@ -97,10 +100,7 @@ pub async fn start_rollup(
         .await
         .unwrap();
 
-    rollup
-        .run_and_report_addr(Some(rest_reporting_channel))
-        .await
-        .unwrap();
+    rollup.run().await.unwrap();
 
     // Close the tempdir explicitly to ensure that rustc doesn't see that it's unused and drop it unexpectedly
     temp_dir.close().unwrap();
