@@ -44,13 +44,13 @@ const chainMetadata: ChainMap<ChainMetadata> = {
     ...agentConfig.chains.sealevel,
     chainId: agentConfig.chains.sealevel.domainId,
     protocol: ProtocolType.Sealevel,
-    rpcUrls: [{ http: "http://0.0.0.0:8899" }],
+    rpcUrls: [{ http: "http://3.226.5.188:8899" }],
   },
   sovereign: {
     ...agentConfig.chains.sovereign,
     chainId: agentConfig.chains.sovereign.domainId,
     protocol: ProtocolType.Sovereign,
-    rpcUrls: [{ http: "http://0.0.0.0:12346" }],
+    rpcUrls: [{ http: "http://3.226.5.188:12346" }],
   },
 };
 
@@ -155,15 +155,30 @@ for (const tx of warpTxns) {
     preflightCommitment: "confirmed",
   });
 
-  const confirmation = await provider.confirmTransaction(
-    signature,
-    "confirmed"
-  );
-
-  if (confirmation.value.err) {
-    throw new Error(
-      `Transaction failed: ${JSON.stringify(confirmation.value.err)}`
-    );
+  // Poll for confirmation instead of using websocket-based confirmTransaction,
+  // which times out against remote test validators
+  const timeoutMs = 60_000;
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const { value } = await provider.getSignatureStatuses([signature]);
+    const status = value[0];
+    if (status) {
+      if (status.err) {
+        throw new Error(
+          `Transaction failed: ${JSON.stringify(status.err)}`
+        );
+      }
+      if (
+        status.confirmationStatus === "confirmed" ||
+        status.confirmationStatus === "finalized"
+      ) {
+        break;
+      }
+    }
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  if (Date.now() - start >= timeoutMs) {
+    throw new Error(`Transaction confirmation timed out: ${signature}`);
   }
 
   console.log(`Transaction confirmed: ${signature}`);

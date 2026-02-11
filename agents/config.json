@@ -18,6 +18,10 @@
         "confirmations": 1,
         "estimateBlockTime": 0.4,
         "reorgPeriod": 0
+      },
+      "index": {
+        "from": 0,
+        "mode": "sequence"
       }
     },
     "sovereign": {
@@ -39,8 +43,8 @@
         }
       ],
       "nativeToken": {
-        "name": "Sov",
-        "symbol": "SOV",
+        "name": "Sovereign Native Token",
+        "symbol": "SNT",
         "decimals": 9
       }
     }
