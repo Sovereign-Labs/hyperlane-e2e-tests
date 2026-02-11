@@ -6,12 +6,11 @@ members = [
   "crates/rollup",
   "crates/stf",
   "crates/stf/stf-declaration",
-  "crates/utils/node-discovery",
   "examples/value-setter",
   "scripts/acceptance-test",
   "scripts/soak-test",
 ]
-default-members = ["crates/rollup", "crates/utils/node-discovery"]
+default-members = ["crates/rollup"]
 
 [workspace.package]
 version = "0.3.0"

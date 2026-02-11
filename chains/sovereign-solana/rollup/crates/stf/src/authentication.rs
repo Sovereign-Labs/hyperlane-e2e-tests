@@ -3,7 +3,8 @@ use std::marker::PhantomData;
 use borsh::{BorshDeserialize, BorshSerialize};
 use sov_eip712_auth::{SchemaProvider, Secp256k1CryptoSpec};
 use sov_modules_api::capabilities::{
-    self, BatchFromUnregisteredSequencer, TransactionAuthenticator, UnregisteredAuthenticationError,
+    self, BatchFromUnregisteredSequencer, FatalError, TransactionAuthenticator,
+    UnregisteredAuthenticationError,
 };
 use sov_modules_api::runtime::capabilities::AuthenticationError;
 use sov_modules_api::{

@@ -6,7 +6,6 @@ use sov_hyperlane_integration::HyperlaneAddress;
 use sov_modules_api::capabilities::TransactionAuthenticator;
 #[cfg(feature = "native")]
 use sov_modules_api::prelude::*;
-use sov_modules_api::Context;
 use sov_modules_api::ExecutionInit;
 use sov_modules_api::OperatingMode;
 use sov_modules_api::Spec;
@@ -96,6 +95,7 @@ where
             &serde_json::from_str(__generated::SCHEMA_JSON)
                 .expect("Failed to deserialize schema json"),
             Self::CHAIN_HASH.into(),
+            api_state.checkpoint_receiver(),
         )
         .expect("Failed to initialize StandardSchemaEndpoint");
         let axum_router = axum_router.merge(schema_endpoint.axum_router());
